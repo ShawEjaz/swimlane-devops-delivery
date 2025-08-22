@@ -1,0 +1,14 @@
+---
+- name: Ensure NTP/chrony on worker nodes
+  hosts: workers
+  become: yes
+  tasks:
+    - name: Install chrony
+      package:
+        name: chrony
+        state: present
+    - name: Enable and start chrony
+      service:
+        name: chronyd
+        state: started
+        enabled: yes

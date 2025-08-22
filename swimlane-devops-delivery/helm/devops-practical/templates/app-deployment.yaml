@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "devops-practical.fullname" . }}-app
+  labels:
+    {{- include "devops-practical.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.app.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "devops-practical.name" . }}
+      app.kubernetes.io/component: app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "devops-practical.name" . }}
+        app.kubernetes.io/component: app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+        - name: app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.app.containerPort }}
+          env:
+            - name: MONGODB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "devops-practical.fullname" . }}-secret
+                  key: MONGODB_URL
+          resources:
+{{ toYaml .Values.app.resources | indent 12 }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.app.readinessPath }}
+              port: {{ .Values.app.containerPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.app.livenessPath }}
+              port: {{ .Values.app.containerPort }}
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/component
+                      operator: In
+                      values: ["app"]
+                topologyKey: kubernetes.io/hostname

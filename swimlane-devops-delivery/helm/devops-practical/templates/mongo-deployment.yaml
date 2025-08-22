@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "devops-practical.fullname" . }}-mongo
+  labels:
+    {{- include "devops-practical.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "devops-practical.name" . }}
+      app.kubernetes.io/component: mongo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "devops-practical.name" . }}
+        app.kubernetes.io/component: mongo
+    spec:
+      containers:
+        - name: mongo
+          image: {{ .Values.mongodb.image }}
+          ports:
+            - containerPort: {{ .Values.mongodb.port }}
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+          env:
+            {{- if .Values.mongodb.auth.enabled }}
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: {{ .Values.mongodb.auth.username | quote }}
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: {{ .Values.mongodb.auth.password | quote }}
+            - name: MONGO_INITDB_DATABASE
+              value: {{ .Values.mongodb.auth.database | quote }}
+            {{- end }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "devops-practical.fullname" . }}-mongo-pvc

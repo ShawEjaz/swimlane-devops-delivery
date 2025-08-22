@@ -1,0 +1,20 @@
+{
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "region": "us-east-1",
+      "instance_type": "t3.medium",
+      "source_ami_filter": {
+        "filters": {"name": "al2023-ami-kernel-*-x86_64"},
+        "owners": ["137112412989"],
+        "most_recent": true
+      },
+      "ssh_username": "ec2-user",
+      "ami_name": "swimlane-worker-{{timestamp}}"
+    }
+  ],
+  "provisioners": [
+    { "type": "shell", "inline": ["sudo yum -y install amazon-ssm-agent || true"] },
+    { "type": "ansible", "playbook_file": "ansible/playbooks/ntp.yml" }
+  ]
+}

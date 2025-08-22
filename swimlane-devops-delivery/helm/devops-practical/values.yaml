@@ -1,0 +1,43 @@
+image:
+  repository: YOUR_DOCKER_REPO/devops-practical
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  port: 80
+
+app:
+  replicas: 2
+  containerPort: 3000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  livenessPath: "/"
+  readinessPath: "/"
+  env: {}
+
+mongodb:
+  enabled: true
+  image: mongo:7
+  port: 27017
+  storage:
+    size: 5Gi
+    storageClass: ""   # set to your EKS/CSI class, e.g., gp3
+  auth:
+    enabled: true
+    username: appuser
+    password: apppass
+    database: appdb
+
+ingress:
+  enabled: false
+  className: ""
+  hosts:
+    - host: devops.local
+      path: /
+  tls: []
